@@ -60,7 +60,7 @@ Edit `.env` to provide:
 
 ---
 
-## 🐳 Run with Docker
+## Run with Docker
 
 ```bash
 docker-compose up --build
@@ -115,7 +115,7 @@ Content-Type: application/json
 
 ---
 
-## 📦 Kafka Output
+## Kafka Output
 
 Once the order is processed, a Kafka message is published:
 
