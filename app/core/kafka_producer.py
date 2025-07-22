@@ -18,7 +18,7 @@ def get_producer():
 def send_to_kafka(data: dict):
     producer = get_producer()
     future = producer.send(settings.KAFKA_TOPIC, value=data)
-    result = future.get(timeout=10)  # will raise exception if send fails
+    result = future.get(timeout=10)
     print(f"Sent to Kafka: {result}")
     producer.flush()
 
