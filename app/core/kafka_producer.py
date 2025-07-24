@@ -2,7 +2,7 @@ from kafka import KafkaProducer
 import json
 from .config import settings
 
-_producer = None  # private module-level singleton
+_producer = None
 
 
 def get_producer():

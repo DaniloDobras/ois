@@ -1,12 +1,14 @@
-import os
-
-from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
-load_dotenv()
 class Settings(BaseSettings):
-    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
-    KAFKA_TOPIC: str = os.getenv("KAFKA_TOPIC")
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    DATABASE_URL: str
+    KAFKA_BOOTSTRAP_SERVERS: str
+    KAFKA_TOPIC: str
+
+    class Config:
+        env_file = ".env"
 
 settings = Settings()
