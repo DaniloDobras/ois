@@ -75,13 +75,13 @@ This will start the FastAPI app along with Kafka, PostgreSQL, etc., as defined i
 ### Initialize the database:
 
 ```bash
-alembic upgrade head
+docker exec -it plc-service alembic upgrade head
 ```
 
 ### Create a new migration:
 
 ```bash
-alembic revision --autogenerate -m "your message"
+docker exec -it plc-service alembic revision --autogenerate -m "table added"
 ```
 
 ---
@@ -99,17 +99,22 @@ POST /orders
 Content-Type: application/json
 
 {
-  "bucketId": "B123",
-  "materialId": "M456",
-  "qty": 10
+  "priority": 1,
+  "buckets": [
+    { "bucket_id": 1 }
+  ],
+  "order_type": "unloading",
+  "description": "test1"
 }
+
 ```
 
 #### Response
 
 ```json
 {
-  "message": "Order received"
+    "status": "order received",
+    "order_id": 5
 }
 ```
 
@@ -121,11 +126,30 @@ Once the order is processed, a Kafka message is published:
 
 ```json
 {
-  "bucketId": "B123",
-  "materialId": "M456",
-  "qty": 10,
-  "timestamp": "2025-07-21T10:30:00Z",
-  "status0": "accepted"
+  "order_id": 42,
+  "priority": 1,
+  "buckets": [
+    {
+      "bucket_id": 1001,
+      "material_type": "Steel",
+      "material_qty": 2,
+      "position": {
+        "position_x": 10,
+        "position_y": 5,
+        "position_z": 0
+      }
+    },
+    {
+      "bucket_id": 1002,
+      "material_type": "Aluminum",
+      "material_qty": 3,
+      "position": {
+        "position_x": 12,
+        "position_y": 7,
+        "position_z": 0
+      }
+    }
+  ]
 }
 ```
 
