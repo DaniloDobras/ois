@@ -19,13 +19,13 @@ services:
     image: postgres:15
     container_name: postgres-db
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ois
-    # volumes:
-    #   - postgres_data:/var/lib/postgresql/data
+    #volumes:
+     # - postgres_data:/var/lib/postgresql/data
     networks:
       - shared-kafka-net
 

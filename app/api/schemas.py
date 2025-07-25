@@ -1,16 +1,16 @@
+from enum import Enum
 from pydantic import BaseModel
 from typing import List
 
-class PositionCreate(BaseModel):
-    position_x: int
-    position_y: int
-    position_z: int
+class OrderType(str, Enum):
+    loading = "loading"
+    unloading = "unloading"
+    place_changing = "place_changing"
 
-class BucketCreate(BaseModel):
-    material_type: str
-    material_qty: int
-    position: PositionCreate
+class BucketReference(BaseModel):
+    bucket_id: int
 
 class OrderCreate(BaseModel):
     priority: int
-    buckets: List[BucketCreate]
+    order_type: OrderType  # ✅ Add this
+    buckets: List[BucketReference]

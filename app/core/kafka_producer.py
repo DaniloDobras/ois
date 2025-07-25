@@ -21,4 +21,3 @@ def send_to_kafka(data: dict):
     result = future.get(timeout=10)
     print(f"Sent to Kafka: {result}")
     producer.flush()
-

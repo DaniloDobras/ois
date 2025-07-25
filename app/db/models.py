@@ -1,14 +1,23 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from enum import Enum as myEnum
 
 Base = declarative_base()
+
+class OrderType(myEnum):
+    LOADING = "loading"
+    UNLOADING = "unloading"
+    PLACE_CHANGING = "place_changing"
+
 
 class Order(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
     priority = Column(Integer, nullable=False)
     buckets = relationship("Bucket", back_populates="order")
+    order_type = Column(String, nullable=False)
+    description = Column(String, nullable=True)
 
 
 class Position(Base):
