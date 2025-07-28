@@ -60,6 +60,33 @@ Edit `.env` to provide:
 
 ---
 
+## 🧪 Development: Using `uv` as Package Manager
+
+For local development, you can use [uv](https://github.com/astral-sh/uv) for faster dependency management. This is optional, but recommended for speedier installs and modern Python workflows.
+
+### 1. Install uv (one-time setup)
+
+```bash
+pipx install uv  # Recommended
+# or
+pip install uv
+```
+
+### 2. Install dependencies with uv
+
+- For standard dependencies:
+  ```bash
+  uv pip install -r requirements.txt
+  ```
+- For development (with extra tools):
+  ```bash
+  uv pip install -r requirements-dev.txt
+  ```
+
+> **Note:** The Docker image and production use traditional `pip` and `requirements.txt` only. `uv` is for local/dev use.
+
+---
+
 ## Run with Docker
 
 ```bash
