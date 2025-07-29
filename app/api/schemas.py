@@ -3,14 +3,14 @@ from pydantic import BaseModel
 from typing import List
 
 class OrderType(str, Enum):
-    loading = "loading"
-    unloading = "unloading"
-    place_changing = "place_changing"
+    LOADING = "loading"
+    UNLOADING = "unloading"
+    PLACE_CHANGING = "place_changing"
 
 class BucketReference(BaseModel):
     bucket_id: int
 
 class OrderCreate(BaseModel):
     priority: int
-    order_type: OrderType  # ✅ Add this
+    order_type: OrderType
     buckets: List[BucketReference]

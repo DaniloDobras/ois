@@ -1,14 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from enum import Enum as myEnum
 
 Base = declarative_base()
-
-class OrderType(myEnum):
-    LOADING = "loading"
-    UNLOADING = "unloading"
-    PLACE_CHANGING = "place_changing"
 
 
 class Order(Base):
