@@ -10,9 +10,9 @@ class OrderType(str, Enum):
 
 
 class BucketActionCreate(BaseModel):
-    bucket_id: int
-    source_position_id: Optional[int] = None  # Required for loading or place_changing
-    target_position_id: Optional[int] = None  # Required for unloading or place_changing
+    bucket_id: Optional[int] = None
+    source_position_id: Optional[int] = None
+    target_position_id: Optional[int] = None
 
 
 class OrderCreate(BaseModel):

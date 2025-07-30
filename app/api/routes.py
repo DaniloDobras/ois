@@ -23,7 +23,6 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
         priority=order.priority,
         order_type=order.order_type,
     )
-
     db.add(new_order)
     db.flush()
 
@@ -35,41 +34,56 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     }
 
     for action in order.actions:
-        bucket = db.query(Bucket).filter(Bucket.id == action.bucket_id).first()
-        if not bucket:
-            raise HTTPException(status_code=404, detail=f"Bucket {action.bucket_id} not found")
+        # loading
+        if order.order_type == "loading":
+            bucket = Bucket()
+            db.add(bucket)
+            db.flush()
+        else:
+            # unloading / place_changing
+            if not action.bucket_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Missing bucket_id for non-loading order"
+                )
+            bucket = db.query(Bucket).filter(Bucket.id == action.bucket_id).first()
+            if not bucket:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Bucket {action.bucket_id} not found"
+                )
 
         source_pos = None
         if order.order_type in {"loading", "place_changing"}:
             if not action.source_position_id:
                 raise HTTPException(
                     status_code=422,
-                    detail=f"Missing source_position_id for bucket {action.bucket_id}")
-            source_pos = db.query(Position).filter(
-                Position.id == action.source_position_id).first()
+                    detail="Missing source_position_id for action"
+                )
+            source_pos = db.query(Position).filter(Position.id == action.source_position_id).first()
             if not source_pos:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Source position {action.source_position_id} not found")
+                    detail=f"Source position {action.source_position_id} not found"
+                )
 
         target_pos = None
         if order.order_type in {"unloading", "place_changing"}:
             if not action.target_position_id:
                 raise HTTPException(
                     status_code=422,
-                    detail=f"Missing target_position_id for bucket {action.bucket_id}")
-            target_pos = (db.query(Position).
-                          filter(
-                Position.id == action.target_position_id).first()
-                          )
+                    detail="Missing target_position_id for action"
+                )
+            target_pos = db.query(Position).filter(Position.id == action.target_position_id).first()
             if not target_pos:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Target position {action.target_position_id} not found")
+                    detail=f"Target position {action.target_position_id} not found"
+                )
 
         bucket_action = BucketAction(
             order_id=new_order.id,
-            bucket_id=action.bucket_id,
+            bucket_id=bucket.id,
             source_position_id=action.source_position_id,
             target_position_id=action.target_position_id
         )
@@ -94,5 +108,6 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db.commit()
     send_to_kafka(kafka_payload)
     return {"status": "order received", "order_id": new_order.id}
+
 
 

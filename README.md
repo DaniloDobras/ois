@@ -125,13 +125,36 @@ Send an order to the service.
 POST /orders
 Content-Type: application/json
 
+LOADING
+
 {
   "priority": 1,
-  "buckets": [
-    { "bucket_id": 1 }
-  ],
+  "order_type": "loading",
+  "actions": [
+    {
+      "source_position_id": 4
+    }
+  ]
+}
+
+UNLOADING
+
+POST /orders
+Content-Type: application/json
+
+{
+  "priority": 2,
   "order_type": "unloading",
-  "description": "test1"
+  "actions": [
+    {
+      "bucket_id": 2,
+      "target_position_id": 4
+    },
+    {
+      "bucket_id": 3,
+      "target_position_id": 3
+    }
+  ]
 }
 
 ```
