@@ -4,7 +4,7 @@ from starlette import status
 
 from app.api.schemas import OrderCreate
 from app.db.database import SessionLocal
-from app.db.models import Order, Bucket, Position
+from app.db.models import Order, Bucket, Position, BucketAction
 from app.core.kafka_producer import send_to_kafka
 
 router = APIRouter()
@@ -21,62 +21,78 @@ def get_db():
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     new_order = Order(
         priority=order.priority,
-        order_type=order.order_type
+        order_type=order.order_type,
     )
 
     db.add(new_order)
-    db.flush()  # So new_order.id is available
+    db.flush()
 
-    for bucket_ref in order.buckets:
-        bucket = db.query(Bucket).filter(
-            Bucket.id == bucket_ref.bucket_id).first()
-        if not bucket:
-            raise HTTPException(status_code=404,
-                                detail=f"Bucket {bucket_ref.bucket_id} not found")
-
-        # Just update the order_id for the existing bucket
-        bucket.order_id = new_order.id
-
-    # Prepare enriched Kafka payload
     kafka_payload = {
         "order_id": new_order.id,
         "priority": new_order.priority,
-        "buckets": []
+        "order_type": new_order.order_type,
+        "actions": []
     }
 
-    for bucket_ref in order.buckets:
-        bucket = db.query(Bucket).filter(
-            Bucket.id == bucket_ref.bucket_id).first()
+    for action in order.actions:
+        bucket = db.query(Bucket).filter(Bucket.id == action.bucket_id).first()
         if not bucket:
-            raise HTTPException(status_code=404,
-                                detail=f"Bucket {bucket_ref.bucket_id} not found")
+            raise HTTPException(status_code=404, detail=f"Bucket {action.bucket_id} not found")
 
-        # Fetch related position
-        position = db.query(Position).filter(
-            Position.id == bucket.position_id).first()
-        if not position:
-            raise HTTPException(status_code=404,
-                                detail=f"Position for bucket {bucket.id} not found")
+        source_pos = None
+        if order.order_type in {"loading", "place_changing"}:
+            if not action.source_position_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Missing source_position_id for bucket {action.bucket_id}")
+            source_pos = db.query(Position).filter(
+                Position.id == action.source_position_id).first()
+            if not source_pos:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Source position {action.source_position_id} not found")
 
-        # Attach order to the existing bucket
-        bucket.order_id = new_order.id
+        target_pos = None
+        if order.order_type in {"unloading", "place_changing"}:
+            if not action.target_position_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Missing target_position_id for bucket {action.bucket_id}")
+            target_pos = (db.query(Position).
+                          filter(
+                Position.id == action.target_position_id).first()
+                          )
+            if not target_pos:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Target position {action.target_position_id} not found")
 
-        # Add to Kafka payload
-        kafka_payload["buckets"].append({
+        bucket_action = BucketAction(
+            order_id=new_order.id,
+            bucket_id=action.bucket_id,
+            source_position_id=action.source_position_id,
+            target_position_id=action.target_position_id
+        )
+        db.add(bucket_action)
+
+        kafka_payload["actions"].append({
             "bucket_id": bucket.id,
-            "material_type": bucket.material_type,
-            "material_qty": bucket.material_qty,
-            "position": {
-                "position_x": position.position_x,
-                "position_y": position.position_y,
-                "position_z": position.position_z,
-            }
+            "source_position": {
+                "id": source_pos.id,
+                "x": source_pos.position_x,
+                "y": source_pos.position_y,
+                "z": source_pos.position_z,
+            } if source_pos else None,
+            "target_position": {
+                "id": target_pos.id,
+                "x": target_pos.position_x,
+                "y": target_pos.position_y,
+                "z": target_pos.position_z,
+            } if target_pos else None
         })
 
     db.commit()
-
-    # Send enriched message
     send_to_kafka(kafka_payload)
-
     return {"status": "order received", "order_id": new_order.id}
+
 
