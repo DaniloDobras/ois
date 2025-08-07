@@ -102,13 +102,13 @@ This will start the FastAPI app along with Kafka, PostgreSQL, etc., as defined i
 ### Initialize the database:
 
 ```bash
-docker exec -it plc-service alembic upgrade head
+docker exec -it ois-service alembic upgrade head
 ```
 
 ### Create a new migration:
 
 ```bash
-docker exec -it plc-service alembic revision --autogenerate -m "table added"
+docker exec -it ois-service alembic revision --autogenerate -m "table added"
 ```
 
 ---

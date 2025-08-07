@@ -1,7 +1,7 @@
 services:
-  app:
+  ois-service:
     build: .
-    container_name: fastapi-app
+    container_name: ois-service
     ports:
       - "8000:8000"
     env_file:
