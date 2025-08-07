@@ -1,8 +1,10 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
-from app.api.schemas import OrderCreate
+from app.api.schemas import OrderCreate, BucketActionOut
 from app.db.database import SessionLocal
 from app.db.models import Order, Bucket, Position, BucketAction
 from app.core.kafka_producer import send_to_kafka
@@ -110,4 +112,6 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     return {"status": "order received", "order_id": new_order.id}
 
 
-
+@router.get("/bucket-actions", response_model=List[BucketActionOut])
+def get_all_bucket_actions(db: Session = Depends(get_db)):
+    return db.query(BucketAction).all()
