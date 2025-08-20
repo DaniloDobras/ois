@@ -2,14 +2,16 @@ services:
   ois-service:
     build:
       context: .
-      target: prod
+      target: dev
     container_name: ois-service
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENV=dev
     ports:
       - "8000:8000"
+      - "5678:5678"
     env_file:
       - .env
-    environment:
-      - ENV=prod 
     depends_on:
       - db
     volumes:
@@ -17,7 +19,7 @@ services:
     networks:
       - shared-kafka-net
     restart: on-failure
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["python", "-Xfrozen_modules=off", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   db:
     image: postgres:15
@@ -29,7 +31,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ois
     volumes:
-     - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - shared-kafka-net
 
