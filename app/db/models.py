@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -106,3 +107,20 @@ class BucketAction(Base):
         back_populates="target_actions",
         foreign_keys=[target_position_id]
     )
+
+
+
+
+class OutboxEvent(Base):
+    __tablename__ = "outbox_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    topic = Column(String(255), nullable=False)
+    key = Column(String(255), nullable=True)
+    value = Column(JSON, nullable=False)
+    headers = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    sent = Column(Boolean, default=False, nullable=False)
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    attempts = Column(Integer, default=0, nullable=False)
+    last_error = Column(Text, nullable=True)
