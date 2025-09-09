@@ -8,6 +8,7 @@ from app.api.schemas import OrderCreate, BucketActionOut
 from app.db.database import SessionLocal
 from app.db.models import Order, Bucket, Position, BucketAction
 from app.core.kafka_producer import send_to_kafka
+from app.core.dependencies import get_current_user, require_roles
 
 router = APIRouter()
 
@@ -20,7 +21,11 @@ def get_db():
 
 
 @router.post("/order", status_code=status.HTTP_201_CREATED)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+def create_order(
+    order: OrderCreate, 
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_roles(["operator", "admin", "manager"]))
+):
     new_order = Order(
         priority=order.priority,
         order_type=order.order_type,
@@ -113,5 +118,32 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/bucket-actions", response_model=List[BucketActionOut])
-def get_all_bucket_actions(db: Session = Depends(get_db)):
+def get_all_bucket_actions(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_roles(["operator", "admin", "manager", "viewer"]))
+):
     return db.query(BucketAction).all()
+
+
+@router.get("/admin-only")
+def admin_only_route(
+    current_user: dict = Depends(require_roles(["admin"]))
+):
+    """Example route that only admins can access"""
+    return {
+        "message": "This is an admin-only route",
+        "user": current_user.get("preferred_username"),
+        "roles": current_user.get("realm_access", {}).get("roles", [])
+    }
+
+
+@router.get("/operator-tasks")
+def operator_tasks(
+    current_user: dict = Depends(require_roles(["operator", "admin"]))
+):
+    """Example route for operators and admins"""
+    return {
+        "message": "Operator tasks endpoint",
+        "user": current_user.get("preferred_username"),
+        "tasks": ["task1", "task2", "task3"]
+    }
