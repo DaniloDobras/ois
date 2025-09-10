@@ -24,7 +24,7 @@ class Order(Base):
 class Position(Base):
     __tablename__ = "positions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     position_x = Column(Integer, nullable=False)
     position_y = Column(Integer, nullable=False)
     position_z = Column(Integer, nullable=False)
