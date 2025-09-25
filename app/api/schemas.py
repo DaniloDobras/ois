@@ -15,7 +15,6 @@ class BucketActionCreate(BaseModel):
     target_position_id: Optional[int] = None
 
 
-
 class BucketActionOut(BaseModel):
     id: int
     order_id: int
@@ -31,3 +30,9 @@ class OrderCreate(BaseModel):
     priority: int
     order_type: OrderType
     actions: List[BucketActionCreate]
+
+
+class PositionCreate(BaseModel):
+    position_x: int
+    position_y: int
+    position_z: int

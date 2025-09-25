@@ -1,16 +1,20 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette import status
 
-from app.api.schemas import OrderCreate, BucketActionOut
+from app.api.schemas import OrderCreate, BucketActionOut, PositionCreate
 from app.db.database import SessionLocal
 from app.db.models import Order, Bucket, Position, BucketAction
 from app.core.kafka_producer import send_to_kafka
 from app.core.dependencies import get_current_user, require_roles
 
+import pandas as pd
+
 router = APIRouter()
+
 
 def get_db():
     db = SessionLocal()
@@ -123,6 +127,74 @@ def get_all_bucket_actions(
     current_user: dict = Depends(require_roles(["operator", "admin", "manager", "viewer"]))
 ):
     return db.query(BucketAction).all()
+
+
+@router.post("/upload-positions")
+async def upload_positions(
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db)
+):
+    filename = file.filename.lower()
+    if not (
+            filename.endswith(".csv")
+            or filename.endswith(".xlsx")
+            or filename.endswith(".xls")
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Only CSV or Excel files are supported"
+        )
+
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(file.file)
+        else:
+            df = pd.read_excel(file.file)
+
+        required_cols = {"position_x", "position_y", "position_z"}
+        if not required_cols.issubset(df.columns):
+            missing = required_cols - set(df.columns)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing columns: {missing}"
+            )
+
+        df = df.astype(object).where(pd.notnull(df), None)
+        records = df.to_dict(orient="records")
+        db.bulk_insert_mappings(Position, records)
+        db.commit()
+        db.execute(text(
+            "SELECT setval('positions_id_seq', (SELECT MAX(id) FROM positions))"
+        ))
+        db.commit()
+
+        return {"message": f"Inserted {len(records)} rows into database"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/add-position", response_model=dict)
+def create_position(position: PositionCreate, db: Session = Depends(get_db)):
+    try:
+        new_position = Position(
+            position_x=position.position_x,
+            position_y=position.position_y,
+            position_z=position.position_z
+        )
+        db.add(new_position)
+        db.commit()
+        db.refresh(new_position)
+
+        return {
+            "message": "Position inserted successfully",
+            "id": new_position.id
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/admin-only")

@@ -1,18 +1,22 @@
-from kafka import KafkaProducer
 import json
-from .config import settings
+from kafka import KafkaProducer
+from app.core.config import settings
 
 _producer = None
 
-
-def get_producer():
+def get_producer() -> KafkaProducer:
     global _producer
     if _producer is None:
         _producer = KafkaProducer(
             bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            acks="all",
+            retries=8,
+            linger_ms=20,
+            compression_type="gzip",
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
         )
     return _producer
+
 
 
 def send_to_kafka(data: dict):
