@@ -7,6 +7,15 @@ from app.core.auth import keycloak_auth
 
 # Security scheme for Bearer token
 security = HTTPBearer(auto_error=False)
+
+
+def _extract_token(request: Request, credentials: Optional[HTTPAuthorizationCredentials]) -> Optional[str]:
+    # 1) Prefer Authorization: Bearer <token>
+    if credentials and credentials.scheme.lower() == "bearer" and credentials.credentials:
+        return credentials.credentials
+    # 2) Fallback to HttpOnly cookie set by /auth/callback
+    token = request.cookies.get("access_token")
+    return token
  
 
 async def get_current_user(
@@ -17,7 +26,8 @@ async def get_current_user(
     Extract and validate the current user from the JWT token.
     Returns the token payload if valid, raises HTTPException if not.
     """
-    if not credentials:
+    token = _extract_token(request, credentials)
+    if not token:
         # If no token provided, redirect to Keycloak login
         login_url = keycloak_auth.get_login_url()
         raise HTTPException(
@@ -28,7 +38,7 @@ async def get_current_user(
     
     try:
         # Validate the token
-        token_payload = keycloak_auth.validate_token(credentials.credentials)
+        token_payload = keycloak_auth.validate_token(token)
         return token_payload
     except HTTPException:
         # Re-raise HTTP exceptions from token validation
@@ -41,6 +51,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Optional[dict]:
     """
@@ -48,11 +59,12 @@ async def get_current_user_optional(
     Returns the token payload if valid, None if no token provided.
     Does not raise exceptions for missing tokens.
     """
-    if not credentials:
+    token = _extract_token(request, credentials)
+    if not token:
         return None
     
     try:
-        token_payload = keycloak_auth.validate_token(credentials.credentials)
+        token_payload = keycloak_auth.validate_token(token)
         return token_payload
     except Exception:
         return None

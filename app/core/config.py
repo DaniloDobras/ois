@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     KEYCLOAK_CLIENT_SECRET: str = ""
     KEYCLOAK_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
     
+    # Frontend SPA base URL for post-login redirect
+    FRONTEND_URL: str = "http://localhost:4200"
+    
+    # Cookie settings
+    COOKIE_DOMAIN: str | None = None
+    COOKIE_PATH: str = "/"
+    COOKIE_SAMESITE: str = "lax"  # "lax", "strict", or "none"
+    COOKIE_SECURE: bool = False    # True required when SameSite=None (HTTPS)
+    
     # JWT settings
     JWT_ALGORITHM: str = "RS256"
     
