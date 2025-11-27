@@ -132,7 +132,8 @@ def get_all_bucket_actions(
 @router.post("/upload-positions")
 async def upload_positions(
         file: UploadFile = File(...),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: dict = Depends(require_roles(["admin"]))
 ):
     filename = file.filename.lower()
     if not (
@@ -176,7 +177,11 @@ async def upload_positions(
 
 
 @router.post("/add-position", response_model=dict)
-def create_position(position: PositionCreate, db: Session = Depends(get_db)):
+def create_position(
+    position: PositionCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_roles(["admin"]))
+    ):
     try:
         new_position = Position(
             position_x=position.position_x,

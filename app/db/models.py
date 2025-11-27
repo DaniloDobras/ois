@@ -115,12 +115,9 @@ class OutboxEvent(Base):
     __tablename__ = "outbox_events"
 
     id = Column(Integer, primary_key=True, index=True)
-    topic = Column(String(255), nullable=False)
-    key = Column(String(255), nullable=True)
-    value = Column(JSON, nullable=False)
-    headers = Column(JSON, nullable=True)
+    aggregate_type = Column(String(100), nullable=False)
+    aggregate_id = Column(String(100), nullable=False)
+    event_type = Column(String(100), nullable=False)
+    payload = Column(JSON, nullable=False)
+    status = Column(String(20), nullable=False, default="NEW", server_default="NEW")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    sent = Column(Boolean, default=False, nullable=False)
-    sent_at = Column(DateTime(timezone=True), nullable=True)
-    attempts = Column(Integer, default=0, nullable=False)
-    last_error = Column(Text, nullable=True)
