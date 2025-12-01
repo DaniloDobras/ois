@@ -1,7 +1,7 @@
 import json
 from kafka import KafkaProducer
 from app.core.config import settings
-
+from app.core.kafka_topics import KafkaTopic
 _producer = None
 
 def get_producer() -> KafkaProducer:
@@ -19,9 +19,9 @@ def get_producer() -> KafkaProducer:
 
 
 
-def send_to_kafka(data: dict):
+def send_to_kafka(topic: KafkaTopic, data: dict):
     producer = get_producer()
-    future = producer.send(settings.KAFKA_TOPIC, value=data)
+    future = producer.send(topic=topic.value, value=data)
     result = future.get(timeout=10)
     print(f"Sent to Kafka: {result}")
     producer.flush()

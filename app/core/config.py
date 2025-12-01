@@ -6,7 +6,6 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     DATABASE_URL: str
     KAFKA_BOOTSTRAP_SERVERS: str
-    KAFKA_TOPIC: str
     
     # Keycloak settings
     KEYCLOAK_URL: str = "http://keycloak:8080"

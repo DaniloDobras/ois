@@ -10,7 +10,7 @@ from app.db.database import SessionLocal
 from app.db.models import Order, Bucket, Position, BucketAction
 from app.core.kafka_producer import send_to_kafka
 from app.core.dependencies import get_current_user, require_roles
-
+from app.core.kafka_topics import KafkaTopic
 import pandas as pd
 
 router = APIRouter()
@@ -117,7 +117,7 @@ def create_order(
         })
 
     db.commit()
-    send_to_kafka(kafka_payload)
+    send_to_kafka(KafkaTopic.ORDER, kafka_payload)
     return {"status": "order received", "order_id": new_order.id}
 
 
