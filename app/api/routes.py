@@ -7,11 +7,13 @@ from starlette import status
 
 from app.api.schemas import OrderCreate, BucketActionOut, PositionCreate
 from app.db.database import SessionLocal
-from app.db.models import Order, Bucket, Position, BucketAction
+from app.db.models import Order, Bucket, Position, BucketAction, model_to_dict
 from app.core.kafka_producer import send_to_kafka
 from app.core.dependencies import get_current_user, require_roles
 from app.core.kafka_topics import KafkaTopic
 import pandas as pd
+
+from app.db.outbox import add_to_outbox_event
 
 router = APIRouter()
 
@@ -177,7 +179,7 @@ async def upload_positions(
 
 
 @router.post("/add-position", response_model=dict)
-def create_position(
+async def create_position(
     position: PositionCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin"]))
@@ -189,8 +191,17 @@ def create_position(
             position_z=position.position_z
         )
         db.add(new_position)
+        db.flush()
+
+        await add_to_outbox_event(
+            db=db,
+            aggregate_type="position",
+            aggregate_id=new_position.id,
+            event_type="position_created",
+            payload=model_to_dict(new_position)
+        )
+
         db.commit()
-        db.refresh(new_position)
 
         return {
             "message": "Position inserted successfully",
