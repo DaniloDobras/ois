@@ -121,3 +121,8 @@ class OutboxEvent(Base):
     payload = Column(JSON, nullable=False)
     status = Column(String(20), nullable=False, default="NEW", server_default="NEW")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+def model_to_dict(obj):
+    """Convert a SQLAlchemy model instance into a dict (table columns only, no relationships)."""
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
